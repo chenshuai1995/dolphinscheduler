@@ -40,10 +40,14 @@ spring:
   messages:
     basename: i18n/messages
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://127.0.0.1:5432/dolphinscheduler
-    username: root
-    password: root
+#    driver-class-name: org.postgresql.Driver
+#    url: jdbc:postgresql://test-chens-vnode001:5432/dolphinscheduler
+#    username: root
+#    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://st-dsjk8s-vapp001:3308/dolphinscheduler?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: dolphinscheduler
+    password: dolphinscheduler
     hikari:
       connection-test-query: select 1
       minimum-idle: 5
@@ -102,7 +106,7 @@ registry:
   type: zookeeper
   zookeeper:
     namespace: dolphinscheduler
-    connect-string: localhost:2181
+    connect-string: test-chens-vnode001:2181
     retry-policy:
       base-sleep-time: 60ms
       max-sleep: 300ms
@@ -144,18 +148,21 @@ python-gateway:
 security:
   authentication:
     # Authentication types (supported types: PASSWORD,LDAP)
-    type: PASSWORD
+    type: LDAP
     # IF you set type `LDAP`, below config will be effective
     ldap:
       # ldap server config
-      urls: ldap://ldap.forumsys.com:389/
-      base-dn: dc=example,dc=com
-      username: cn=read-only-admin,dc=example,dc=com
-      password: password
+#      urls: ldap://ldap.forumsys.com:389/
+      urls: ldap://ldap.s.2345inc.com:20008/
+#      base-dn: dc=example,dc=com
+      base-dn: ou=employee,dc=2345,dc=net
+#      username: cn=read-only-admin,dc=example,dc=com
+      username: cn=readonly,dc=2345,dc=net
+      password: readonly
       user:
         # admin userId when you use LDAP login
-        admin: read-only-admin
-        identity-attribute: uid
+        admin: chens
+        identity-attribute: cn
         email-attribute: mail
         # action when ldap user is not exist (supported types: CREATE,DENY)
         not-exist-action: CREATE
@@ -173,6 +180,16 @@ traffic:
       # eg.
       #tenant1: 11
       #tenant2: 20
+
+custom:
+  gitlab:
+    # gitlab 访问的token
+    accessToken: glpat-sS9WmDb-Z6FNsESXDMJT
+  resources:
+    prefix: /warehouse
+  ds:
+    admin: chens
+
 
 
 # Override by profile

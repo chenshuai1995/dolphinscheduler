@@ -172,9 +172,11 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
             return result;
         }
 
+        // TODO
         if (checkResourceExists(fullName, type.ordinal())) {
             logger.error("resource directory {} has exist, can't recreate", fullName);
             putMsg(result, Status.RESOURCE_EXIST);
+            result.setData(queryResourcesFileInfo(loginUser.getUserName(), fullName).getId());
             return result;
         }
 
@@ -1234,7 +1236,7 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
     @Override
     @Transactional
     public void createOrUpdateResource(String userName, String fullName, String description,
-                                          String resourceContent) {
+                                       String resourceContent) {
         User user = userMapper.queryByUserNameAccurately(userName);
         int suffixLabelIndex = fullName.indexOf(PERIOD);
         if (suffixLabelIndex == -1) {
@@ -1264,9 +1266,13 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
             if (createDirResult.getCode() == Status.SUCCESS.getCode()) {
                 Map<String, Object> resultMap = (Map<String, Object>) createDirResult.getData();
                 return resultMap.get("id") == null ? -1 : (Integer) resultMap.get("id");
+            } else if (createDirResult.getCode() == Status.RESOURCE_EXIST.getCode()) {
+                return (Integer) createDirResult.getData();
+            } else if (createDirResult.getCode() == Status.RESOURCE_FILE_EXIST.getCode()) {
+                // Status.RESOURCE_FILE_EXIST
+                return -10;
             } else {
                 String msg = String.format("Can not create dir %s", dirFullName);
-                logger.error(msg);
                 throw new IllegalArgumentException(msg);
             }
         }
@@ -1293,7 +1299,8 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
 
     private Result<Object> verifyResource(User loginUser, ResourceType type, String fullName, int pid) {
         Result<Object> result = verifyResourceName(fullName, type, loginUser);
-        if (!result.getCode().equals(Status.SUCCESS.getCode())) {
+        if (!result.getCode().equals(Status.SUCCESS.getCode())
+                && !result.getCode().equals(Status.RESOURCE_FILE_EXIST.getCode())) {
             return result;
         }
         return verifyPid(loginUser, pid);
@@ -1308,10 +1315,11 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
                 putMsg(result, Status.PARENT_RESOURCE_NOT_EXIST);
                 return result;
             }
-            if (!canOperator(loginUser, parentResource.getUserId())) {
-                putMsg(result, Status.USER_NO_OPERATION_PERM);
-                return result;
-            }
+            // TODO
+            // if (!canOperator(loginUser, parentResource.getUserId())) {
+            // putMsg(result, Status.USER_NO_OPERATION_PERM);
+            // return result;
+            // }
         }
         return result;
     }

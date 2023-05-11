@@ -56,6 +56,7 @@ import org.apache.dolphinscheduler.dao.mapper.UDFUserMapper;
 import org.apache.dolphinscheduler.dao.mapper.UserMapper;
 import org.apache.dolphinscheduler.dao.utils.ResourceProcessDefinitionUtils;
 import org.apache.dolphinscheduler.service.storage.StorageOperate;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -722,6 +723,7 @@ public class UsersServiceImpl extends BaseServiceImpl implements UsersService {
             Resource resource = resourceMapper.selectById(resourceIdValue);
             if (resource == null) {
                 putMsg(result, Status.RESOURCE_NOT_EXIST);
+                result.put(Constants.DATA_LIST, resourceIdValue);
                 return result;
             }
 
