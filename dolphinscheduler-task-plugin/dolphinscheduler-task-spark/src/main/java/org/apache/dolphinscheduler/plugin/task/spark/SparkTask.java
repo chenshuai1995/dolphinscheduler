@@ -29,6 +29,7 @@ import org.apache.dolphinscheduler.plugin.task.api.parser.ParamUtils;
 import org.apache.dolphinscheduler.plugin.task.api.parser.ParameterUtils;
 import org.apache.dolphinscheduler.plugin.task.api.utils.ArgsUtils;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -121,7 +122,8 @@ public class SparkTask extends AbstractYarnTask {
         // replace placeholder, and combining local and global parameters
         Map<String, Property> paramsMap = taskExecutionContext.getPrepareParamsMap();
 
-        String command = ParameterUtils.convertParameterPlaceholders(String.join(" ", args), ParamUtils.convert(paramsMap));
+        String command =
+                ParameterUtils.convertParameterPlaceholders(String.join(" ", args), ParamUtils.convert(paramsMap));
 
         logger.info("spark task command: {}", command);
 
@@ -137,7 +139,8 @@ public class SparkTask extends AbstractYarnTask {
         List<String> args = new ArrayList<>();
         args.add(SparkConstants.MASTER);
 
-        String deployMode = StringUtils.isNotEmpty(sparkParameters.getDeployMode()) ? sparkParameters.getDeployMode() : SparkConstants.DEPLOY_MODE_LOCAL;
+        String deployMode = StringUtils.isNotEmpty(sparkParameters.getDeployMode()) ? sparkParameters.getDeployMode()
+                : SparkConstants.DEPLOY_MODE_LOCAL;
         if (!SparkConstants.DEPLOY_MODE_LOCAL.equals(deployMode)) {
             args.add(SparkConstants.SPARK_ON_YARN);
             args.add(SparkConstants.DEPLOY_MODE);
@@ -160,7 +163,8 @@ public class SparkTask extends AbstractYarnTask {
         }
 
         String others = sparkParameters.getOthers();
-        if (!SparkConstants.DEPLOY_MODE_LOCAL.equals(deployMode) && (StringUtils.isEmpty(others) || !others.contains(SparkConstants.SPARK_QUEUE))) {
+        if (!SparkConstants.DEPLOY_MODE_LOCAL.equals(deployMode)
+                && (StringUtils.isEmpty(others) || !others.contains(SparkConstants.SPARK_QUEUE))) {
             String queue = sparkParameters.getQueue();
             if (StringUtils.isNotEmpty(queue)) {
                 args.add(SparkConstants.SPARK_QUEUE);
@@ -186,7 +190,12 @@ public class SparkTask extends AbstractYarnTask {
         // bin/spark-sql -f fileName
         if (ProgramType.SQL == programType) {
             args.add(SparkConstants.SQL_FROM_FILE);
-            args.add(generateScriptFile());
+
+            if (CollectionUtils.isEmpty(sparkParameters.getResourceList())) {
+                args.add(generateScriptFile());
+            } else {
+                args.add(generateResourceFile());
+            }
         }
         return args;
     }
@@ -223,8 +232,20 @@ public class SparkTask extends AbstractYarnTask {
         }
     }
 
+    private String generateResourceFile() {
+        final List<ResourceInfo> resourceInfos = sparkParameters.getResourceList();
+        if (resourceInfos.size() > 1) {
+            logger.warn("more than 1 files detected, use the first one by default");
+        }
+
+        String resourceFileName = StringUtils.stripStart(resourceInfos.get(0).getResourceName(), "/");
+        logger.info("resource file name: {}", resourceFileName);
+        return resourceFileName;
+    }
+
     private String generateScriptFile() {
-        String scriptFileName = String.format("%s/%s_node.sql", taskExecutionContext.getExecutePath(), taskExecutionContext.getTaskAppId());
+        String scriptFileName = String.format("%s/%s_node.sql", taskExecutionContext.getExecutePath(),
+                taskExecutionContext.getTaskAppId());
 
         File file = new File(scriptFileName);
         Path path = file.toPath();
